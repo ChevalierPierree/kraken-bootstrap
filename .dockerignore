@@ -1,0 +1,18 @@
+# Historique git : inutile pour lancer le job
+.git
+
+# Environnement Python de la machine : ne marche pas dans le conteneur
+.venv
+
+# Résultats du job : il les recrée à chaque lancement
+output
+out
+
+# Tests : utiles en CI, pas pour lancer le job
+tests
+
+# Fichiers temporaires de Python, pytest et ruff
+# (** veut dire : dans tous les dossiers)
+**/__pycache__
+.pytest_cache
+.ruff_cache
