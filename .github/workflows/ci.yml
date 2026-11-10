@@ -7,6 +7,11 @@ on:
     branches: [main]
   pull_request:
 
+# Droits du jeton GITHUB_TOKEN : lire le code, écrire sur GHCR
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   lint-test:
     # Machine Linux fournie par GitHub, neuve à chaque run
@@ -41,3 +46,36 @@ jobs:
         with:
           name: rapport-tests
           path: reports/junit.xml
+
+  build-push:
+    # Ne démarre que si lint-test a réussi
+    needs: lint-test
+    runs-on: ubuntu-latest
+    steps:
+      # Chaque job a sa propre machine : on récupère à nouveau le code
+      - name: Récupérer le code
+        uses: actions/checkout@v7
+
+      # GHCR refuse les majuscules : ${...,,} met le nom en minuscules
+      - name: Préparer le nom de l'image
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      # Connexion seulement sur main, avec le jeton créé par GitHub
+      - name: Se connecter à GHCR
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Construit toujours, pousse seulement sur main
+      - name: Construire et pousser l'image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ${{ env.IMAGE }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
