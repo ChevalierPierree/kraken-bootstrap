@@ -8,10 +8,36 @@ on:
   pull_request:
 
 jobs:
-  hello:
+  lint-test:
     # Machine Linux fournie par GitHub, neuve à chaque run
     runs-on: ubuntu-latest
     steps:
-      # Commande shell : affiche le SHA du commit qui a lancé le run
-      - name: Afficher le SHA
-        run: echo "Commit ${{ github.sha }}"
+      # La machine démarre vide : on récupère le code du dépôt
+      - name: Récupérer le code
+        uses: actions/checkout@v7
+
+      # Python 3.12, avec un cache pip qui dépend de requirements-dev.txt
+      - name: Installer Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Installer les dépendances
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      # Le rapport JUnit est écrit dans reports/junit.xml
+      - name: Tests
+        run: pytest -q --junitxml=reports/junit.xml
+
+      # always() : on envoie le rapport même si les tests ont échoué
+      - name: Publier le rapport de tests
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rapport-tests
+          path: reports/junit.xml
