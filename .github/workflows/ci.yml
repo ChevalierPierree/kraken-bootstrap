@@ -1,0 +1,17 @@
+# Nom affiché dans l'onglet Actions
+name: ci
+
+# Déclencheurs : un push sur main, ou n'importe quelle pull request
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  hello:
+    # Machine Linux fournie par GitHub, neuve à chaque run
+    runs-on: ubuntu-latest
+    steps:
+      # Commande shell : affiche le SHA du commit qui a lancé le run
+      - name: Afficher le SHA
+        run: echo "Commit ${{ github.sha }}"
